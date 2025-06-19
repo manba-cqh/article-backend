@@ -1,0 +1,24 @@
+{
+  "functions": {
+    "server.py": {
+      "runtime": "python3.9"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server.py"
+    },
+    {
+      "src": "/webhook/(.*)",
+      "dest": "/server.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/server.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "."
+  }
+} 
