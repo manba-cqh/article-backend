@@ -7,12 +7,29 @@ FastAPI 后端应用，已配置 Supabase 数据库连接。
 ✅ 数据库连接已配置 (Supabase)  
 ✅ JWT 密钥已设置  
 ✅ Vercel 部署配置已修复  
+✅ API 目录结构已创建  
 
 ## 修复的问题
 
 - 修复了 Vercel 运行时配置错误
-- 简化了 `vercel.json` 配置
-- 移除了不必要的 `api` 目录
+- 创建了正确的 `api` 目录结构
+- 复制了所有必要的依赖文件到 `api` 目录
+- 更新了 `vercel.json` 配置
+
+## 项目结构
+
+```
+article-backend/
+├── api/                    # Vercel 函数目录
+│   ├── server.py          # 主应用文件
+│   ├── models.py          # 数据库模型
+│   ├── schemas.py         # Pydantic 模式
+│   ├── auth.py            # 认证模块
+│   ├── database.py        # 数据库配置
+│   └── requirements.txt   # Python 依赖
+├── vercel.json            # Vercel 配置
+└── README.md              # 项目说明
+```
 
 ## 部署到 Vercel
 
@@ -57,5 +74,6 @@ vercel --prod
 
 如果遇到部署问题，请检查：
 1. `vercel.json` 配置是否正确
-2. `requirements.txt` 是否包含所有依赖
-3. 数据库连接是否正常 
+2. `api/requirements.txt` 是否包含所有依赖
+3. 数据库连接是否正常
+4. 所有必要的文件是否都在 `api` 目录中 
