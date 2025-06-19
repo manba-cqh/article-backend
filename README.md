@@ -8,7 +8,7 @@ FastAPI 后端应用，已配置 Supabase 数据库连接。
 ✅ JWT 密钥已设置  
 ✅ Vercel 部署配置已修复  
 ✅ API 目录结构已创建  
-✅ Python 3.9 运行时已配置  
+✅ 部署失败问题已解决  
 
 ## 修复的问题
 
@@ -16,29 +16,31 @@ FastAPI 后端应用，已配置 Supabase 数据库连接。
 - 创建了正确的 `api` 目录结构
 - 复制了所有必要的依赖文件到 `api` 目录
 - 更新了 `vercel.json` 配置
-- 配置了 Python 3.9 运行时
+- 简化了依赖配置，避免安装错误
+- 使用更稳定的 Python 运行时版本
+- 创建了简单的 `index.py` 入口文件
 
 ## 项目结构
 
 ```
 article-backend/
 ├── api/                    # Vercel 函数目录
+│   ├── index.py           # 入口文件
 │   ├── server.py          # 主应用文件
 │   ├── models.py          # 数据库模型
 │   ├── schemas.py         # Pydantic 模式
 │   ├── auth.py            # 认证模块
 │   ├── database.py        # 数据库配置
-│   ├── requirements.txt   # Python 依赖
-│   └── runtime.txt        # Python 版本配置
+│   └── requirements.txt   # Python 依赖
 ├── vercel.json            # Vercel 配置
 └── README.md              # 项目说明
 ```
 
-## Python 版本
+## 部署配置
 
-- 使用 Python 3.9
-- 配置在 `api/runtime.txt` 中
-- Vercel 运行时: `@vercel/python@3.1.0`
+- 使用 `@vercel/python@2.0.0` 运行时
+- 入口文件: `api/index.py`
+- 简化的依赖配置
 
 ## 部署到 Vercel
 
@@ -86,4 +88,5 @@ vercel --prod
 2. `api/requirements.txt` 是否包含所有依赖
 3. 数据库连接是否正常
 4. 所有必要的文件是否都在 `api` 目录中
-5. Python 版本配置是否正确 
+5. 入口文件 `api/index.py` 是否存在
+6. 是否使用了稳定的运行时版本 
