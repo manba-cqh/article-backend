@@ -6,7 +6,13 @@ FastAPI 后端应用，已配置 Supabase 数据库连接。
 
 ✅ 数据库连接已配置 (Supabase)  
 ✅ JWT 密钥已设置  
-✅ Vercel 部署配置已完成  
+✅ Vercel 部署配置已修复  
+
+## 修复的问题
+
+- 修复了 Vercel 运行时配置错误
+- 简化了 `vercel.json` 配置
+- 移除了不必要的 `api` 目录
 
 ## 部署到 Vercel
 
@@ -45,4 +51,11 @@ vercel --prod
 
 ## 数据库
 
-使用 Supabase PostgreSQL 数据库，表结构会自动创建。 
+使用 Supabase PostgreSQL 数据库，表结构会自动创建。
+
+## 故障排除
+
+如果遇到部署问题，请检查：
+1. `vercel.json` 配置是否正确
+2. `requirements.txt` 是否包含所有依赖
+3. 数据库连接是否正常 
