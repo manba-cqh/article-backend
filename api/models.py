@@ -2,9 +2,9 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-Base = declarative_base()
+DatabaseBase = declarative_base()
 
-class User(Base):
+class User(DatabaseBase):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -16,13 +16,13 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-class SerialNumber(Base):
+class SerialNumber(DatabaseBase):
     __tablename__ = "serial_numbers"
     id = Column(Integer, primary_key=True, index=True)
     serial = Column(String, unique=True, index=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-class Report(Base):
+class Report(DatabaseBase):
     __tablename__ = "reports"
     report_id = Column(String, primary_key=True, index=True)
     status = Column(String)

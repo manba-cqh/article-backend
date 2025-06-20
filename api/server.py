@@ -6,19 +6,18 @@ import uvicorn
 import json
 from datetime import datetime, timedelta
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 import re
 import uuid
 import os
 
-import models
-import schemas
-import auth
-from database import engine, get_db
-from models import SerialNumber, Report
+from .schemas import User, UserCreate, Token
+from .auth import get_password_hash, verify_password, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+from .models import User as UserModel, Report, SerialNumber, DatabaseBase
+from .database import engine, get_db
 
 # 创建数据库表
-models.Base.metadata.create_all(bind=engine)
+DatabaseBase.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -37,10 +36,10 @@ app.add_middleware(
 )
 
 # 用户注册
-@app.post("/api/register", response_model=schemas.User)
-def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+@app.post("/api/register", response_model=User)
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # 检查用户名是否已存在
-    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    db_user = db.query(UserModel).filter(UserModel.username == user.username).first()
     if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -48,7 +47,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         )
     
     # 检查邮箱是否已存在
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    db_user = db.query(UserModel).filter(UserModel.email == user.email).first()
     if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -56,8 +55,8 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         )
     
     # 创建新用户
-    hashed_password = auth.get_password_hash(user.password)
-    db_user = models.User(
+    hashed_password = get_password_hash(user.password)
+    db_user = UserModel(
         username=user.username,
         email=user.email,
         hashed_password=hashed_password,
@@ -69,28 +68,28 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 # 用户登录
-@app.post("/api/token", response_model=schemas.Token)
+@app.post("/api/token", response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    user = db.query(models.User).filter(models.User.username == form_data.username).first()
-    if not user or not auth.verify_password(form_data.password, user.hashed_password):
+    user = db.query(UserModel).filter(UserModel.username == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
 # 获取当前用户信息
-@app.get("/api/users/me", response_model=schemas.User)
-async def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
+@app.get("/api/users/me", response_model=User)
+async def read_users_me(current_user: UserModel = Depends(get_current_user)):
     return current_user
 
 @app.post("/webhook/plagwise")
@@ -111,7 +110,7 @@ async def plagwise_webhook(request: Request, db: Session = Depends(get_db)):
                     submitted_file = submitted_file_url[start:end]
                 else:
                     submitted_file = submitted_file_url[start:]
-        report = db.query(models.Report).filter_by(report_id=report_id).first()
+        report = db.query(Report).filter_by(report_id=report_id).first()
         if report:
             # 已存在则更新
             report.status = data.get('status')
@@ -125,7 +124,7 @@ async def plagwise_webhook(request: Request, db: Session = Depends(get_db)):
             report.slots_balance = data.get('slots_balance')
         else:
             # 不存在则插入
-            report = models.Report(
+            report = Report(
                 report_id=report_id,
                 status=data.get('status'),
                 error=data.get('error'),
@@ -159,11 +158,11 @@ def validate_serial(data: SerialCheckRequest, db: Session = Depends(get_db)):
     return {"valid": True}
 
 @router.get("/api/reports")
-def get_reports(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+def get_reports(db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     if not current_user.report_id_list:
         return []
     report_ids = current_user.report_id_list.split(';')
-    reports = db.query(models.Report).filter(models.Report.report_id.in_(report_ids)).all()
+    reports = db.query(Report).filter(Report.report_id.in_(report_ids)).all()
     return reports
 
 @router.delete("/api/reports/{report_id}")
@@ -183,11 +182,10 @@ class SerialNumberResponse(BaseModel):
     serial: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 @app.post("/api/generate-serials", response_model=List[SerialNumberResponse])
-def generate_serials(data: SerialNumberCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+def generate_serials(data: SerialNumberCreate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     # 验证是否是管理员
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="只有管理员可以生成序列号")
@@ -207,7 +205,7 @@ def generate_serials(data: SerialNumberCreate, db: Session = Depends(get_db), cu
     return serials
 
 @app.get("/api/serials", response_model=List[SerialNumberResponse])
-def get_serials(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+def get_serials(db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     # 验证是否是管理员
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="只有管理员可以查看序列号")
@@ -219,7 +217,7 @@ def get_serials(db: Session = Depends(get_db), current_user: models.User = Depen
 @app.post("/api/users/update-reports")
 async def update_user_reports(
     report_data: dict,
-    current_user: models.User = Depends(auth.get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     try:

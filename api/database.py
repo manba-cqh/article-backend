@@ -25,7 +25,7 @@ SessionLocal = sessionmaker(
     expire_on_commit=False
 )
 
-Base = declarative_base()
+DatabaseBase = declarative_base()
 
 # 依赖项
 def get_db():
