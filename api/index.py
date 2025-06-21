@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict
 import re
 import uuid
 import os
+import aiohttp
 
 from .schemas import User, UserCreate, Token
 from .auth import get_password_hash, verify_password, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -282,4 +283,35 @@ async def update_user_reports(
 app.include_router(router)
 
 # 导出FastAPI应用实例供Vercel使用
-# handler = app 
+# handler = app
+
+# 文件提交转发API
+@app.post("/api/submit-file")
+async def submit_file_forward(request: Request):
+    try:
+        # 获取原始请求的form数据
+        form = await request.form()
+        
+        # 准备转发到Plagwise的数据
+        plagwise_data = aiohttp.FormData()
+        
+        # 复制所有表单字段
+        for key, value in form.items():
+            if hasattr(value, 'filename'):  # 文件字段
+                content = await value.read()
+                plagwise_data.add_field(key, content, filename=value.filename)
+            else:  # 普通字段
+                plagwise_data.add_field(key, value)
+        
+        # 转发到Plagwise API
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                'https://plagwise.com/api/submit-file',
+                data=plagwise_data
+            ) as response:
+                response_data = await response.json()
+                return response_data
+                
+    except Exception as e:
+        print(f"Error forwarding request: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 

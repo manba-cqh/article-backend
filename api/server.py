@@ -92,6 +92,17 @@ async def login_for_access_token(
 async def read_users_me(current_user: UserModel = Depends(get_current_user)):
     return current_user
 
+@app.post("/api/submit-file")
+async def submit_file(request: Request, db: Session = Depends(get_db)):
+    try:
+        form = await request.form()
+        data = dict(form)
+        print('webhook data: ', data)
+        return {"msg": "success", "data": data}
+    except Exception as e:
+        print("处理webhook请求失败:", e)
+        return {"msg": "fail", "error": str(e)}
+
 @app.post("/webhook/plagwise")
 async def plagwise_webhook(request: Request, db: Session = Depends(get_db)):
     try:
