@@ -83,6 +83,16 @@ async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+    # 添加调试信息
+    print(f"Received form data: username={form_data.username}, grant_type={getattr(form_data, 'grant_type', 'N/A')}")
+    
+    # 验证grant_type（如果提供）
+    if hasattr(form_data, 'grant_type') and form_data.grant_type and form_data.grant_type != "password":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Only 'password' grant type is supported"
+        )
+    
     user = db.query(UserModel).filter(UserModel.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -96,6 +106,27 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+# 测试端点 - 验证API是否正常工作
+@app.post("/api/test-token")
+async def test_token(request: Request):
+    """测试端点，用于验证请求格式"""
+    try:
+        # 尝试解析form数据
+        form = await request.form()
+        return {
+            "status": "success",
+            "message": "Form data received successfully",
+            "data": dict(form),
+            "content_type": request.headers.get("content-type")
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": "Failed to parse form data",
+            "error": str(e),
+            "content_type": request.headers.get("content-type")
+        }
 
 # 获取当前用户信息
 @app.get("/api/users/me", response_model=User)
@@ -251,4 +282,4 @@ async def update_user_reports(
 app.include_router(router)
 
 # 导出FastAPI应用实例供Vercel使用
-handler = app 
+# handler = app 
