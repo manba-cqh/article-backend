@@ -49,14 +49,6 @@ def read_root():
 # 用户注册
 @app.post("/api/register", response_model=User)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    # 检查用户名是否已存在
-    db_user = db.query(UserModel).filter(UserModel.username == user.username).first()
-    if db_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
-        )
-    
     # 检查邮箱是否已存在
     db_user = db.query(UserModel).filter(UserModel.email == user.email).first()
     if db_user:
@@ -68,10 +60,9 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     # 创建新用户
     hashed_password = get_password_hash(user.password)
     db_user = UserModel(
-        username=user.username,
         email=user.email,
         hashed_password=hashed_password,
-        is_admin=(user.username == "plagwise_admin")  # 如果是plagwise_admin用户，设置为管理员
+        is_admin=(user.email == "admin@plagwise.com")  # 如果是admin@plagwise.com用户，设置为管理员
     )
     db.add(db_user)
     db.commit()
@@ -94,17 +85,18 @@ async def login_for_access_token(
             detail="Only 'password' grant type is supported"
         )
     
-    user = db.query(UserModel).filter(UserModel.username == form_data.username).first()
+    # 使用邮箱登录，form_data.username字段现在包含邮箱
+    user = db.query(UserModel).filter(UserModel.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
+        data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
