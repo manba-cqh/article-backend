@@ -362,7 +362,7 @@ async def get_submission_status(id: str, db: Session = Depends(get_db)):
         # 转发到Plagwise API
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f'https://turnitin-api.easyessayy.com/v2/submissions/{id}',
+                f'https://turnitin-api.easyessayy.com/v2/submissions/{id}?id={id}',
                 headers={"Authorization": "Bearer c1f4ae8609e630c29b411054bf4ee918c08d80c360e0388371439c93df43178"}
             ) as response:
                 response_data = await response.json()
@@ -378,6 +378,64 @@ async def get_submission_status(id: str, db: Session = Depends(get_db)):
     except Exception as e:
         logging.error(f"Error getting submission status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# 下载查重报告API（代理）
+@app.get("/api/reports/{report_id}/plagiarism")
+async def get_plagiarism_report(report_id: str):
+    """
+    下载查重报告（PDF）
+    参数: report_id - 报告ID
+    """
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f'https://turnitin-api.easyessayy.com/v2/submissions/{report_id}/reports/plagiarism?id={report_id}',
+                headers={"Authorization": "Bearer c1f4ae8609e630c29b411054bf4ee918c08d80c360e0388371439c93df43178"}
+            ) as response:
+                if response.status == 200:
+                    content = await response.read()
+                    from fastapi.responses import Response
+                    return Response(
+                        content=content,
+                        media_type="application/pdf",
+                        headers={
+                            "Content-Disposition": f"inline; filename=plagiarism_report_{report_id}.pdf"
+                        }
+                    )
+                else:
+                    raise HTTPException(status_code=response.status, detail="无法获取查重报告")
+    except Exception as e:
+        logging.error(f"获取查重报告失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 下载AI报告API（代理）
+@app.get("/api/reports/{report_id}/ai")
+async def get_ai_report(report_id: str):
+    """
+    下载AI检测报告（PDF）
+    参数: report_id - 报告ID
+    """
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f'https://turnitin-api.easyessayy.com/v2/submissions/{report_id}/reports/ai?id={report_id}',
+                headers={"Authorization": "Bearer c1f4ae8609e630c29b411054bf4ee918c08d80c360e0388371439c93df43178"}
+            ) as response:
+                if response.status == 200:
+                    content = await response.read()
+                    from fastapi.responses import Response
+                    return Response(
+                        content=content,
+                        media_type="application/pdf",
+                        headers={
+                            "Content-Disposition": f"inline; filename=ai_report_{report_id}.pdf"
+                        }
+                    )
+                else:
+                    raise HTTPException(status_code=response.status, detail="无法获取AI报告")
+    except Exception as e:
+        logging.error(f"获取AI报告失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 
 
 # ==================== 后台定时任务：自动更新报告状态 ====================
 
