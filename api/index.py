@@ -315,8 +315,8 @@ async def submit_file_forward(request: Request, db: Session = Depends(get_db)):
         # 转发到Plagwise API
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                'https://turnitin-api.easyessayy.com/v2/submissions',
-                headers={"Authorization": "Bearer c1f4ae8609e630c29b411054bf4ee918c08d80c360e0388371439c93df43178"},
+                'https://turnitin.zeroturnitin.com/api/checks',
+                headers={"Authorization": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NjE2OTgyNjA4OThfNTc1IiwiaWF0IjoxNzYxNjk4MjY0LCJleHAiOjQ5MTUyOTgyNjR9._ncEyeu12KZ0h9-pyMd_CedJTCPvodvKbjemIxkHuGatBeROH3o_pCHGIGoq0J_0"},
                 data=plagwise_data
             ) as response:
                 response_data = await response.json()
@@ -362,8 +362,8 @@ async def get_submission_status(id: str, db: Session = Depends(get_db)):
         # 转发到Plagwise API
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f'https://turnitin-api.easyessayy.com/v2/submissions/{id}?id={id}',
-                headers={"Authorization": "Bearer c1f4ae8609e630c29b411054bf4ee918c08d80c360e0388371439c93df43178"}
+                f'https://turnitin.zeroturnitin.com/api/checks/{id}?id={id}',
+                headers={"Authorization": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NjE2OTgyNjA4OThfNTc1IiwiaWF0IjoxNzYxNjk4MjY0LCJleHAiOjQ5MTUyOTgyNjR9._ncEyeu12KZ0h9-pyMd_CedJTCPvodvKbjemIxkHuGatBeROH3o_pCHGIGoq0J_0"}
             ) as response:
                 response_data = await response.json()
                 
@@ -389,8 +389,8 @@ async def get_plagiarism_report(report_id: str):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f'https://turnitin-api.easyessayy.com/v2/submissions/{report_id}/reports/plagiarism?id={report_id}',
-                headers={"Authorization": "Bearer c1f4ae8609e630c29b411054bf4ee918c08d80c360e0388371439c93df43178"}
+                f'https://turnitin.zeroturnitin.com/api/checks/{report_id}/similarity-report?id={report_id}',
+                headers={"Authorization": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NjE2OTgyNjA4OThfNTc1IiwiaWF0IjoxNzYxNjk4MjY0LCJleHAiOjQ5MTUyOTgyNjR9._ncEyeu12KZ0h9-pyMd_CedJTCPvodvKbjemIxkHuGatBeROH3o_pCHGIGoq0J_0"}
             ) as response:
                 if response.status == 200:
                     content = await response.read()
@@ -418,8 +418,8 @@ async def get_ai_report(report_id: str):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f'https://turnitin-api.easyessayy.com/v2/submissions/{report_id}/reports/ai?id={report_id}',
-                headers={"Authorization": "Bearer c1f4ae8609e630c29b411054bf4ee918c08d80c360e0388371439c93df43178"}
+                f'https://turnitin.zeroturnitin.com/api/checks/{report_id}/ai-report?id={report_id}',
+                headers={"Authorization": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NjE2OTgyNjA4OThfNTc1IiwiaWF0IjoxNzYxNjk4MjY0LCJleHAiOjQ5MTUyOTgyNjR9._ncEyeu12KZ0h9-pyMd_CedJTCPvodvKbjemIxkHuGatBeROH3o_pCHGIGoq0J_0"}
             ) as response:
                 if response.status == 200:
                     content = await response.read()
@@ -446,8 +446,8 @@ async def fetch_report_status(report_id: str):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                f'https://turnitin-api.easyessayy.com/v2/submissions/{report_id}',
-                headers={"Authorization": "Bearer c1f4ae8609e630c29b411054bf4ee918c08d80c360e0388371439c93df43178"},
+                f'https://turnitin.zeroturnitin.com/api/checks/{report_id}',
+                headers={"Authorization": "Bearer eyJhbGciOiJIUzM4NCJ9.eyJ1c2VySWQiOiJ1c2VyXzE3NjE2OTgyNjA4OThfNTc1IiwiaWF0IjoxNzYxNjk4MjY0LCJleHAiOjQ5MTUyOTgyNjR9._ncEyeu12KZ0h9-pyMd_CedJTCPvodvKbjemIxkHuGatBeROH3o_pCHGIGoq0J_0"},
                 timeout=aiohttp.ClientTimeout(total=10)
             ) as response:
                 if response.status == 200:
